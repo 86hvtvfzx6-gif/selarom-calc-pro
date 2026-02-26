@@ -1,10 +1,7 @@
-/* =========================
-   CALCULO RESIDENCIAL COMPLETO
-========================= */
-
+<script>
 function seleccionarCalibre(I){
 
-let Iseg = I * 1.25; // 125% carga continua
+let Iseg = I * 1.25;
 
 if(Iseg<=15) return ["14 AWG","15 A",2.525];
 if(Iseg<=20) return ["12 AWG","20 A",1.588];
@@ -51,18 +48,12 @@ document.getElementById("resultadoIngenieria").innerHTML =
 advertencia;
 }
 
-
-/* =========================
-   LISTA COMPLETA ESTABLE
-========================= */
-
 let listaTexto = "";
 
 function generarLista(){
 
 listaTexto =
 "LISTA COMPLETA DE MATERIAL RESIDENCIAL\n\n"+
-
 "ACOMETIDA Y ALIMENTACION\n"+
 "Mufa\n"+
 "Tubo galvanizado para acometida\n"+
@@ -71,7 +62,6 @@ listaTexto =
 "Centro de carga\n"+
 "Barras de tierra\n"+
 "Barra de neutro\n\n"+
-
 "BREAKERS TERMOMAGNETICOS\n"+
 "Breaker 15 A\n"+
 "Breaker 20 A\n"+
@@ -82,12 +72,10 @@ listaTexto =
 "Breaker 60 A\n"+
 "Breaker 80 A\n"+
 "Breaker 100 A\n\n"+
-
 "SISTEMA DE PUESTA A TIERRA\n"+
 "Varilla copperweld 5/8 x 2.40 m\n"+
 "Conector para varilla\n"+
 "Cable de tierra\n\n"+
-
 "CONDUCTORES ELECTRICOS\n"+
 "14 AWG\n"+
 "12 AWG\n"+
@@ -97,7 +85,6 @@ listaTexto =
 "Fase negro o rojo\n"+
 "Neutro blanco\n"+
 "Tierra verde\n\n"+
-
 "CANALIZACION\n"+
 "Tubo conduit PVC\n"+
 "Tubo EMT\n"+
@@ -109,7 +96,6 @@ listaTexto =
 "Chalupas\n"+
 "Tapas\n"+
 "Adaptadores 4x4\n\n"+
-
 "ALUMBRADO\n"+
 "Portalámparas\n"+
 "Luminarias LED\n"+
@@ -117,14 +103,12 @@ listaTexto =
 "Apagadores 3 vias\n"+
 "Apagadores 4 vias\n"+
 "Dimmer\n\n"+
-
 "CONTACTOS\n"+
 "Contacto duplex 15A\n"+
 "Contacto duplex 20A\n"+
 "Contacto con tierra\n"+
 "Contacto GFCI\n"+
 "Contacto 220V\n\n"+
-
 "PLACAS\n"+
 "Placa 1 ventana\n"+
 "Placa 2 ventanas\n"+
@@ -133,7 +117,6 @@ listaTexto =
 "Placa ciega\n"+
 "Placa GFCI\n"+
 "Placa TV/datos\n\n"+
-
 "PROTECCION ADICIONAL\n"+
 "Interruptor diferencial\n"+
 "Supresor de picos";
@@ -171,3 +154,4 @@ y+=6;
 
 doc.save("Lista_Material_SELAROM.pdf");
 }
+   <script>
