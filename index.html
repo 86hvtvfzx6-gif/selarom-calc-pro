@@ -1,118 +1,10 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SELAROM CALC PRO</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<style>
-body{
-margin:0;
-font-family:Arial;
-background:#111;
-color:white;
-text-align:center;
-}
-header{
-background:#1a1a1a;
-padding:15px;
-font-size:22px;
-color:#00ff88;
-font-weight:bold;
-}
-.subtitulo{
-font-size:14px;
-color:#aaa;
-margin-top:-10px;
-margin-bottom:10px;
-}
-.container{
-padding:20px;
-}
-input{
-width:90%;
-padding:10px;
-margin:8px 0;
-border-radius:6px;
-border:none;
-}
-button{
-width:95%;
-padding:12px;
-margin-top:15px;
-background:#00ff88;
-border:none;
-font-weight:bold;
-cursor:pointer;
-}
-.result{
-margin-top:20px;
-background:#1e1e1e;
-padding:15px;
-border-radius:10px;
-text-align:left;
-white-space:pre-line;
-}
-.seccion{
-margin-top:30px;
-border-top:1px solid #333;
-padding-top:20px;
-}
-.alerta{
-color:#ff4d4d;
-font-weight:bold;
-}
-</style>
-</head>
-
-<body>
-
-<header>⚡ SELAROM</header>
-<div class="subtitulo">Soluciones Eléctricas</div>
-
-<div class="container">
-
-<!-- ===================== -->
-<!-- MÓDULO INGENIERÍA -->
-<!-- ===================== -->
-
-<div class="seccion">
-<h3>🏠 Cálculo Eléctrico Residencial Monofásico</h3>
-
-<input type="number" id="potencia" placeholder="Potencia total (W)">
-<input type="number" id="voltaje" placeholder="Voltaje (127 o 220)">
-<input type="number" id="distancia" placeholder="Distancia (m)">
-
-<button onclick="calcularIngenieria()">CALCULAR INGENIERÍA</button>
-
-<div class="result" id="resultadoIngenieria"></div>
-</div>
-
-<!-- ===================== -->
-<!-- MÓDULO LISTA -->
-<!-- ===================== -->
-
-<div class="seccion">
-<h3>📋 Lista Completa de Material</h3>
-
-<button onclick="generarLista()">GENERAR LISTA COMPLETA</button>
-<button onclick="generarPDF()">GENERAR PDF LISTA</button>
-
-<div class="result" id="resultadoLista"></div>
-</div>
-
-</div>
-
-<script>
-
 /* =========================
-   SELECCIÓN DE CALIBRE
+   CALCULO RESIDENCIAL COMPLETO
 ========================= */
 
 function seleccionarCalibre(I){
-let Iseg = I * 1.25;
+
+let Iseg = I * 1.25; // 125% carga continua
 
 if(Iseg<=15) return ["14 AWG","15 A",2.525];
 if(Iseg<=20) return ["12 AWG","20 A",1.588];
@@ -121,18 +13,21 @@ if(Iseg<=40) return ["8 AWG","40 A",0.628];
 if(Iseg<=55) return ["6 AWG","50 A",0.395];
 if(Iseg<=75) return ["4 AWG","70 A",0.248];
 if(Iseg<=100) return ["3 AWG","90 A",0.197];
+
 return ["Consultar ingeniería","Especial",0];
 }
 
-/* =========================
-   CÁLCULO INGENIERÍA
-========================= */
-
 function calcularIngenieria(){
 
-let P=parseFloat(document.getElementById("potencia").value)||0;
-let V=parseFloat(document.getElementById("voltaje").value)||127;
-let L=parseFloat(document.getElementById("distancia").value)||0;
+let P = parseFloat(document.getElementById("potencia").value);
+let V = parseFloat(document.getElementById("voltaje").value);
+let L = parseFloat(document.getElementById("distancia").value);
+
+if(!P || !V || !L){
+document.getElementById("resultadoIngenieria").innerHTML =
+"Favor de llenar todos los campos.";
+return;
+}
 
 let I = P / V;
 let datos = seleccionarCalibre(I);
@@ -142,124 +37,128 @@ let porcentaje = (vd / V) * 100;
 
 let advertencia = "";
 if(porcentaje > 3){
-advertencia = "<br><span class='alerta'>⚠ Caída mayor al 3% — aumentar calibre</span>";
+advertencia = "<br><b style='color:red;'>Caída mayor al 3% - aumentar calibre</b>";
 }
 
 document.getElementById("resultadoIngenieria").innerHTML =
 "<b>Potencia:</b> "+P+" W<br>"+
-"<b>Corriente:</b> "+I.toFixed(2)+" A<br>"+
+"<b>Voltaje:</b> "+V+" V<br>"+
+"<b>Corriente calculada:</b> "+I.toFixed(2)+" A<br>"+
+"<b>Corriente al 125%:</b> "+(I*1.25).toFixed(2)+" A<br>"+
 "<b>Calibre recomendado:</b> "+datos[0]+"<br>"+
 "<b>Breaker recomendado:</b> "+datos[1]+"<br>"+
 "<b>Caída de tensión:</b> "+porcentaje.toFixed(2)+" %"+
 advertencia;
-
 }
 
+
 /* =========================
-   LISTA COMPLETA
+   LISTA COMPLETA ESTABLE
 ========================= */
 
-let listaTexto="";
+let listaTexto = "";
 
 function generarLista(){
 
-listaTexto = `
-📋 LISTA COMPLETA DE MATERIAL RESIDENCIAL
+listaTexto =
+"LISTA COMPLETA DE MATERIAL RESIDENCIAL\n\n"+
 
-🔌 Acometida y alimentación
-Mufa
-Tubo galvanizado para acometida
-Base para medidor (monofásica o bifásica)
-Interruptor principal
-Centro de carga
-Barras de tierra
-Barra de neutro
+"ACOMETIDA Y ALIMENTACION\n"+
+"Mufa\n"+
+"Tubo galvanizado para acometida\n"+
+"Base para medidor\n"+
+"Interruptor principal\n"+
+"Centro de carga\n"+
+"Barras de tierra\n"+
+"Barra de neutro\n\n"+
 
-🔲 Breakers termomagnéticos
-Breaker 15 A
-Breaker 20 A
-Breaker 25 A
-Breaker 30 A
-Breaker 40 A
-Breaker 50 A
-Breaker 60 A
-Breaker 80 A
-Breaker 100 A
+"BREAKERS TERMOMAGNETICOS\n"+
+"Breaker 15 A\n"+
+"Breaker 20 A\n"+
+"Breaker 25 A\n"+
+"Breaker 30 A\n"+
+"Breaker 40 A\n"+
+"Breaker 50 A\n"+
+"Breaker 60 A\n"+
+"Breaker 80 A\n"+
+"Breaker 100 A\n\n"+
 
-🌎 Sistema de puesta a tierra
-Varilla copperweld 5/8” x 2.40 m
-Conector para varilla
-Cable de tierra (verde o desnudo)
+"SISTEMA DE PUESTA A TIERRA\n"+
+"Varilla copperweld 5/8 x 2.40 m\n"+
+"Conector para varilla\n"+
+"Cable de tierra\n\n"+
 
-⚡ Conductores eléctricos (THW-LS o THHN)
-Cable #14 AWG (alumbrado)
-Cable #12 AWG (contactos)
-Cable #10 AWG (30A)
-Cable #8 AWG (40–50A)
-Cable #6 AWG (60A)
-Negro o rojo (fase)
-Blanco (neutro)
-Verde (tierra)
+"CONDUCTORES ELECTRICOS\n"+
+"14 AWG\n"+
+"12 AWG\n"+
+"10 AWG\n"+
+"8 AWG\n"+
+"6 AWG\n"+
+"Fase negro o rojo\n"+
+"Neutro blanco\n"+
+"Tierra verde\n\n"+
 
-🧱 Canalización
-Tubo conduit PVC
-Tubo EMT
-Coples
-Conectores
-Curvas
-Abrazaderas
-Cajas de registro 4x4
-Chalupas
-Tapas
-Adaptadores 4x4 a chalupa
+"CANALIZACION\n"+
+"Tubo conduit PVC\n"+
+"Tubo EMT\n"+
+"Coples\n"+
+"Conectores\n"+
+"Curvas\n"+
+"Abrazaderas\n"+
+"Cajas 4x4\n"+
+"Chalupas\n"+
+"Tapas\n"+
+"Adaptadores 4x4\n\n"+
 
-💡 Alumbrado
-Portalámparas o luminarias LED
-Apagadores sencillos
-Apagadores de 3 vías
-Apagadores de 4 vías
-Dimmer
+"ALUMBRADO\n"+
+"Portalámparas\n"+
+"Luminarias LED\n"+
+"Apagadores sencillos\n"+
+"Apagadores 3 vias\n"+
+"Apagadores 4 vias\n"+
+"Dimmer\n\n"+
 
-🔌 Contactos
-Contactos duplex 15A
-Contactos duplex 20A
-Contactos con tierra
-Contactos GFCI
-Contactos 220V
+"CONTACTOS\n"+
+"Contacto duplex 15A\n"+
+"Contacto duplex 20A\n"+
+"Contacto con tierra\n"+
+"Contacto GFCI\n"+
+"Contacto 220V\n\n"+
 
-🪟 Placas (tapas)
-Placas 1 ventana
-Placas 2 ventanas
-Placas 3 ventanas
-Placas 4 ventanas
-Placas ciegas
-Placas especiales para GFCI
-Placas para TV / datos
+"PLACAS\n"+
+"Placa 1 ventana\n"+
+"Placa 2 ventanas\n"+
+"Placa 3 ventanas\n"+
+"Placa 4 ventanas\n"+
+"Placa ciega\n"+
+"Placa GFCI\n"+
+"Placa TV/datos\n\n"+
 
-🔐 Protección adicional
-Interruptor diferencial
-Supresor de picos
-`;
+"PROTECCION ADICIONAL\n"+
+"Interruptor diferencial\n"+
+"Supresor de picos";
 
 document.getElementById("resultadoLista").innerText = listaTexto;
-
 }
 
 function generarPDF(){
 
+if(listaTexto===""){
+alert("Primero genera la lista");
+return;
+}
+
 const { jsPDF } = window.jspdf;
-let doc=new jsPDF();
+let doc = new jsPDF();
 
-doc.setFontSize(20);
+doc.setFontSize(18);
 doc.text("SELAROM",20,20);
+doc.setFontSize(12);
+doc.text("Soluciones Electricas",20,30);
+doc.line(20,35,190,35);
 
-doc.setFontSize(14);
-doc.text("Soluciones Eléctricas",20,30);
-
-doc.line(20,40,190,40);
-
-let lineas=doc.splitTextToSize(listaTexto,170);
-let y=50;
+let lineas = doc.splitTextToSize(listaTexto,170);
+let y = 45;
 
 lineas.forEach(linea=>{
 if(y>280){
@@ -270,10 +169,5 @@ doc.text(linea,20,y);
 y+=6;
 });
 
-doc.save("Lista_Completa_Material_SELAROM.pdf");
+doc.save("Lista_Material_SELAROM.pdf");
 }
-
-</script>
-
-</body>
-</html>
