@@ -31,7 +31,7 @@ margin-bottom:10px;
 .container{
 padding:20px;
 }
-input{
+input,select{
 width:90%;
 padding:10px;
 margin:8px 0;
@@ -55,6 +55,11 @@ border-radius:10px;
 text-align:left;
 white-space:pre-line;
 }
+.seccion{
+margin-top:25px;
+border-top:1px solid #333;
+padding-top:20px;
+}
 </style>
 </head>
 
@@ -65,39 +70,99 @@ white-space:pre-line;
 
 <div class="container">
 
-<h3>Datos del Proyecto</h3>
+<!-- ===================== -->
+<!-- MÓDULO 1 INGENIERÍA -->
+<!-- ===================== -->
+
+<div class="seccion">
+<h3>🏠 Cálculo Eléctrico Residencial Monofásico</h3>
+
+<input type="number" id="potencia" placeholder="Potencia total (W)">
+<input type="number" id="voltaje" placeholder="Voltaje (127 o 220)">
+<input type="number" id="distanciaCalc" placeholder="Distancia (m)">
+<button onclick="calcularIngenieria()">CALCULAR INGENIERÍA</button>
+
+<div class="result" id="resultadoIngenieria"></div>
+</div>
+
+<!-- ===================== -->
+<!-- MÓDULO 2 LISTA -->
+<!-- ===================== -->
+
+<div class="seccion">
+<h3>📋 Lista Completa de Material</h3>
 
 <input type="number" id="numContactos" placeholder="Número de contactos">
 <input type="number" id="numApagadoresS" placeholder="Apagadores sencillos">
 <input type="number" id="numApagadoresE" placeholder="Apagadores 3 vías">
 <input type="number" id="numApagadores4" placeholder="Apagadores 4 vías">
 <input type="number" id="numLuminarias" placeholder="Número de luminarias">
-<input type="number" id="distancia" placeholder="Metros aproximados de instalación">
+<input type="number" id="distanciaLista" placeholder="Metros aproximados de instalación">
 
-<button onclick="calcular()">GENERAR LISTA DE MATERIAL</button>
-<button onclick="generarPDF()">GENERAR REPORTE PDF</button>
+<button onclick="generarLista()">GENERAR LISTA</button>
+<button onclick="generarPDF()">GENERAR PDF LISTA</button>
 
-<div class="result" id="resultado"></div>
+<div class="result" id="resultadoLista"></div>
+</div>
 
 </div>
 
 <script>
 
-let listaTexto = "";
+/* =========================
+   MÓDULO 1 – INGENIERÍA
+========================= */
 
-function calcular(){
+function seleccionarCalibre(I){
+let Iseg = I*1.25;
+if(Iseg<=15) return ["14 AWG","15 A",2.525];
+if(Iseg<=20) return ["12 AWG","20 A",1.588];
+if(Iseg<=30) return ["10 AWG","30 A",0.999];
+if(Iseg<=40) return ["8 AWG","40 A",0.628];
+if(Iseg<=55) return ["6 AWG","50 A",0.395];
+if(Iseg<=75) return ["4 AWG","70 A",0.248];
+if(Iseg<=100) return ["3 AWG","90 A",0.197];
+return ["Consultar ingeniería","Especial",0];
+}
+
+function calcularIngenieria(){
+
+let P=parseFloat(document.getElementById("potencia").value)||0;
+let V=parseFloat(document.getElementById("voltaje").value)||127;
+let L=parseFloat(document.getElementById("distanciaCalc").value)||0;
+
+let I=P/V;
+let datos=seleccionarCalibre(I);
+
+let vd=(2*L*I*datos[2])/V;
+let porcentaje=(vd/V)*100;
+
+document.getElementById("resultadoIngenieria").innerHTML=
+"<b>Corriente:</b> "+I.toFixed(2)+" A<br>"+
+"<b>Calibre recomendado:</b> "+datos[0]+"<br>"+
+"<b>Breaker recomendado:</b> "+datos[1]+"<br>"+
+"<b>Caída de tensión:</b> "+porcentaje.toFixed(2)+" %";
+}
+
+/* =========================
+   MÓDULO 2 – LISTA
+========================= */
+
+let listaTexto="";
+
+function generarLista(){
 
 let contactos=parseInt(document.getElementById("numContactos").value)||0;
 let apagS=parseInt(document.getElementById("numApagadoresS").value)||0;
 let apagE=parseInt(document.getElementById("numApagadoresE").value)||0;
 let apag4=parseInt(document.getElementById("numApagadores4").value)||0;
 let luminarias=parseInt(document.getElementById("numLuminarias").value)||0;
-let metros=parseInt(document.getElementById("distancia").value)||0;
+let metros=parseInt(document.getElementById("distanciaLista").value)||0;
 
 let chalupas=contactos+apagS+apagE+apag4;
 let cajasRegistro=Math.ceil(metros/10);
 
-listaTexto = `
+listaTexto=`
 📋 LISTA COMPLETA DE MATERIAL RESIDENCIAL
 
 🔌 Acometida y alimentación
@@ -121,61 +186,42 @@ Breaker 80 A
 Breaker 100 A
 
 🌎 Sistema de puesta a tierra
-Varilla copperweld 5/8” x 2.40 m
+Varilla copperweld
 Conector para varilla
 Cable de tierra
 
-⚡ Conductores eléctricos (THW-LS o THHN)
+⚡ Conductores eléctricos
 Cable #14 AWG
 Cable #12 AWG
 Cable #10 AWG
 Cable #8 AWG
 Cable #6 AWG
-Negro o rojo (fase)
-Blanco (neutro)
-Verde (tierra)
 
 🧱 Canalización
-Tubo conduit PVC o EMT
-Coples
-Conectores
-Curvas
-Abrazaderas
 Cajas de registro 4x4 (${cajasRegistro})
 Chalupas (${chalupas})
-Tapas
-Adaptadores 4x4 a chalupa
+Tubería PVC o EMT
+Coples y conectores
 
 💡 Alumbrado
 Luminarias (${luminarias})
 Apagadores sencillos (${apagS})
 Apagadores 3 vías (${apagE})
 Apagadores 4 vías (${apag4})
-Dimmer (opcional)
 
 🔌 Contactos
-Contactos duplex 15A (${contactos})
-Contactos duplex 20A
-Contactos con tierra
-Contactos GFCI
-Contactos 220V
+Contactos duplex (${contactos})
 
-🪟 Placas (tapas)
+🪟 Placas
 Placas 1 ventana
 Placas 2 ventanas
 Placas 3 ventanas
 Placas 4 ventanas
 Placas ciegas
-Placas especiales para GFCI
-Placas para TV / datos
-
-🔐 Protección adicional
-Interruptor diferencial
-Supresor de picos
+Placas GFCI
 `;
 
-document.getElementById("resultado").innerText = listaTexto;
-
+document.getElementById("resultadoLista").innerText=listaTexto;
 }
 
 function generarPDF(){
@@ -189,15 +235,10 @@ doc.text("SELAROM",20,20);
 doc.setFontSize(14);
 doc.text("Soluciones Eléctricas",20,30);
 
-doc.setFontSize(11);
-doc.text("Contacto: 951 849 3149",20,38);
+doc.line(20,40,190,40);
 
-doc.line(20,42,190,42);
-
-doc.setFontSize(10);
-
-let lineas = doc.splitTextToSize(listaTexto,170);
-let y=55;
+let lineas=doc.splitTextToSize(listaTexto,170);
+let y=50;
 
 lineas.forEach(linea=>{
 if(y>280){
@@ -208,7 +249,7 @@ doc.text(linea,20,y);
 y+=6;
 });
 
-doc.save("Lista_Completa_Material_SELAROM.pdf");
+doc.save("Lista_Material_SELAROM.pdf");
 }
 
 </script>
