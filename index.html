@@ -3,95 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SELAROM CALC PRO 2.0</title>
+<title>SELAROM CALC PRO TOTAL</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 body{
-    margin:0;
-    font-family:Arial, sans-serif;
-    background:#111;
-    color:white;
-    text-align:center;
+margin:0;
+font-family:Arial;
+background:#111;
+color:white;
+text-align:center;
 }
 header{
-    background:#1a1a1a;
-    padding:15px;
-    font-size:20px;
-    font-weight:bold;
-    color:#00ff88;
+background:#1a1a1a;
+padding:15px;
+font-size:22px;
+color:#00ff88;
+font-weight:bold;
+}
+.subtitulo{
+font-size:14px;
+color:#aaa;
+margin-top:-10px;
+margin-bottom:10px;
 }
 .container{
-    padding:20px;
+padding:20px;
 }
-select,input{
-    width:90%;
-    padding:10px;
-    margin:8px 0;
-    border-radius:6px;
-    border:none;
-    font-size:16px;
+input,select{
+width:90%;
+padding:10px;
+margin:8px 0;
+border-radius:6px;
+border:none;
 }
 button{
-    width:95%;
-    padding:12px;
-    margin-top:15px;
-    background:#00ff88;
-    border:none;
-    font-size:17px;
-    font-weight:bold;
-    cursor:pointer;
+width:95%;
+padding:12px;
+margin-top:15px;
+background:#00ff88;
+border:none;
+font-weight:bold;
+cursor:pointer;
 }
 .result{
-    margin-top:20px;
-    background:#1e1e1e;
-    padding:15px;
-    border-radius:10px;
-}
-.warning{
-    color:#ff4d4d;
-    font-weight:bold;
-}
-.ok{
-    color:#00ff88;
-    font-weight:bold;
+margin-top:20px;
+background:#1e1e1e;
+padding:15px;
+border-radius:10px;
+text-align:left;
 }
 </style>
 </head>
 
 <body>
 
-<header>SELAROM CALC PRO 2.0 – Ingeniería Industrial</header>
+<header>⚡ SELAROM</header>
+<div class="subtitulo">Soluciones Eléctricas</div>
 
 <div class="container">
 
-<h3>Cálculo Profesional Industrial</h3>
-
-<select id="sistema">
-<option value="mono">Monofásico</option>
-<option value="trif">Trifásico</option>
+<select id="tipoSistema">
+<option value="residencial">Residencial</option>
+<option value="mono">Comercial Monofásico</option>
+<option value="trifasico">Comercial Trifásico</option>
 </select>
 
-<select id="modo">
-<option value="watts">Ingresar en Watts</option>
-<option value="amps">Ingresar en Amperes</option>
-</select>
-
-<select id="voltaje">
-<option value="127">127 V</option>
-<option value="220">220 V</option>
-<option value="440">440 V</option>
-</select>
-
-<select id="material">
-<option value="cobre">Cobre</option>
-<option value="aluminio">Aluminio</option>
-</select>
-
-<input type="number" id="valor" placeholder="Potencia (W) o Corriente (A)">
-<input type="number" id="fp" placeholder="Factor de Potencia (0.8 - 1)" step="0.01">
-<input type="number" id="distancia" placeholder="Distancia (metros)">
+<input type="number" id="potencia" placeholder="Potencia total (W)">
+<input type="number" id="voltaje" placeholder="Voltaje (127 / 220 / 440)">
+<input type="number" id="distancia" placeholder="Distancia (m)">
+<input type="number" id="fp" placeholder="Factor de potencia (si aplica)">
 
 <button onclick="calcular()">CALCULAR</button>
+<button onclick="generarPDF()">GENERAR REPORTE PDF</button>
 
 <div class="result" id="resultado"></div>
 
@@ -99,95 +84,65 @@ button{
 
 <script>
 
+function seleccionarCalibre(I){
+let Iseg = I*1.25;
+if(Iseg<=15) return ["14 AWG","15 A",2.525];
+if(Iseg<=20) return ["12 AWG","20 A",1.588];
+if(Iseg<=30) return ["10 AWG","30 A",0.999];
+if(Iseg<=40) return ["8 AWG","40 A",0.628];
+if(Iseg<=55) return ["6 AWG","50 A",0.395];
+if(Iseg<=75) return ["4 AWG","70 A",0.248];
+if(Iseg<=100) return ["3 AWG","90 A",0.197];
+return ["Consultar ingeniería","Especial",0];
+}
+
 function calcular(){
+let P=parseFloat(document.getElementById("potencia").value)||0;
+let V=parseFloat(document.getElementById("voltaje").value)||127;
+let L=parseFloat(document.getElementById("distancia").value)||0;
+let fp=parseFloat(document.getElementById("fp").value)||1;
+let tipo=document.getElementById("tipoSistema").value;
 
-let sistema = document.getElementById("sistema").value;
-let modo = document.getElementById("modo").value;
-let V = parseFloat(document.getElementById("voltaje").value);
-let material = document.getElementById("material").value;
-let valor = parseFloat(document.getElementById("valor").value);
-let FP = parseFloat(document.getElementById("fp").value) || 1;
-let D = parseFloat(document.getElementById("distancia").value);
+let I=0;
 
-if(!valor || !D){
-document.getElementById("resultado").innerHTML="Ingrese todos los datos.";
-return;
-}
-
-let I = 0;
-
-if(modo === "watts"){
-if(sistema === "mono"){
-I = valor / (V * FP);
+if(tipo==="trifasico"){
+I=P/(1.732*V*fp);
 }else{
-I = valor / (1.732 * V * FP);
-}
-}else{
-I = valor;
+I=P/V;
 }
 
-let Isegura = I * 1.25;
+let datos=seleccionarCalibre(I);
 
-let tabla = {
-"14": material === "cobre" ? 2.525 : 4.016,
-"12": material === "cobre" ? 1.588 : 2.525,
-"10": material === "cobre" ? 0.999 : 1.588,
-"8": material === "cobre" ? 0.628 : 0.999,
-"6": material === "cobre" ? 0.395 : 0.628,
-"4": material === "cobre" ? 0.248 : 0.395,
-"2": material === "cobre" ? 0.156 : 0.248,
-"1/0": material === "cobre" ? 0.098 : 0.156
-};
-
-let calibres = [
-{awg:"14", amp:15},
-{awg:"12", amp:20},
-{awg:"10", amp:30},
-{awg:"8", amp:40},
-{awg:"6", amp:55},
-{awg:"4", amp:70},
-{awg:"2", amp:95},
-{awg:"1/0", amp:125}
-];
-
-let calibre="Consultar";
-let breaker="Consultar";
-let resistencia=0;
-
-for(let c of calibres){
-if(Isegura <= c.amp){
-calibre=c.awg+" AWG";
-breaker=c.amp+" A";
-resistencia=tabla[c.awg];
-break;
-}
-}
-
-let Vdrop;
-
-if(sistema === "mono"){
-Vdrop = (2 * D * Isegura * resistencia) / 1000;
-}else{
-Vdrop = (1.732 * D * Isegura * resistencia) / 1000;
-}
-
-let porcentaje = (Vdrop / V) * 100;
-
-let estadoCaida="";
-if(porcentaje > 3){
-estadoCaida = "<div class='warning'>⚠ Caída mayor a 3% (Subir calibre)</div>";
-}else{
-estadoCaida = "<div class='ok'>✔ Caída dentro de límite</div>";
-}
+let vd=(2*L*I*datos[2])/V;
+let porcentaje=(vd/V)*100;
 
 document.getElementById("resultado").innerHTML=
-"<b>Corriente calculada:</b> "+I.toFixed(2)+" A<br>"+
-"<b>Corriente 125%:</b> "+Isegura.toFixed(2)+" A<br>"+
-"<b>Calibre recomendado:</b> "+calibre+"<br>"+
-"<b>Breaker recomendado:</b> "+breaker+"<br>"+
-"<b>Caída de tensión:</b> "+porcentaje.toFixed(2)+" %<br>"+
-estadoCaida;
+"<b>Corriente:</b> "+I.toFixed(2)+" A<br>"+
+"<b>Calibre:</b> "+datos[0]+"<br>"+
+"<b>Breaker:</b> "+datos[1]+"<br>"+
+"<b>Caída de tensión:</b> "+porcentaje.toFixed(2)+" %";
+}
 
+function generarPDF(){
+const { jsPDF } = window.jspdf;
+let doc=new jsPDF();
+
+doc.setFontSize(20);
+doc.text("SELAROM",20,20);
+
+doc.setFontSize(14);
+doc.text("Soluciones Eléctricas",20,30);
+
+doc.setFontSize(11);
+doc.text("Contacto: 951 849 3149",20,38);
+
+doc.setFontSize(12);
+doc.line(20,42,190,42);
+
+let contenido=document.getElementById("resultado").innerText;
+doc.text(contenido,20,55);
+
+doc.save("Reporte_SELAROM.pdf");
 }
 
 </script>
