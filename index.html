@@ -9,118 +9,188 @@
 <meta name="theme-color" content="#00ff88">
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #111;
-    color: #fff;
-    text-align: center;
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:#0f0f0f;
+    color:white;
 }
-header {
-    background: #1a1a1a;
-    padding: 20px;
-    font-size: 22px;
-    font-weight: bold;
-    color: #00ff88;
+header{
+    background:#161616;
+    padding:20px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    color:#00ff88;
 }
-.container {
-    padding: 20px;
+.container{
+    padding:20px;
+    max-width:500px;
+    margin:auto;
 }
-input, select {
-    width: 90%;
-    padding: 10px;
-    margin: 8px 0;
-    border-radius: 5px;
-    border: none;
-    font-size: 16px;
+.card{
+    background:#1c1c1c;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:20px;
 }
-button {
-    width: 95%;
-    padding: 12px;
-    margin-top: 15px;
-    background: #00ff88;
-    border: none;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
+input, select{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border-radius:6px;
+    border:none;
+    font-size:16px;
 }
-.result {
-    margin-top: 20px;
-    background: #1e1e1e;
-    padding: 15px;
-    border-radius: 10px;
+button{
+    width:100%;
+    padding:14px;
+    margin-top:15px;
+    background:#00ff88;
+    border:none;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
 }
+.result{
+    margin-top:15px;
+    padding:15px;
+    border-radius:10px;
+    font-size:15px;
+}
+.green{ background:#113322; }
+.yellow{ background:#4d3b00; }
+.red{ background:#4d0000; }
 </style>
 </head>
 
 <body>
 
-<header>SELAROM CALC PRO</header>
+<header>SELAROM CALC PRO – Ingeniería Eléctrica</header>
 
 <div class="container">
 
-<h3>Cálculo de Calibre</h3>
+<div class="card">
+<h3>Cálculo Profesional</h3>
+
+<select id="sistema">
+<option value="mono">Monofásico</option>
+<option value="tri">Trifásico</option>
+</select>
+
+<select id="material">
+<option value="cobre">Cobre</option>
+<option value="aluminio">Aluminio</option>
+</select>
 
 <select id="voltaje">
 <option value="127">127 V</option>
 <option value="220">220 V</option>
+<option value="440">440 V</option>
+</select>
+
+<select id="limite">
+<option value="3">Límite 3%</option>
+<option value="5">Límite 5%</option>
 </select>
 
 <input type="number" id="potencia" placeholder="Potencia total (Watts)">
 <input type="number" id="distancia" placeholder="Distancia (metros)">
-
 <button onclick="calcular()">CALCULAR</button>
 
-<div class="result" id="resultado"></div>
+<div id="resultado"></div>
 
+</div>
 </div>
 
 <script>
-function calcular() {
 
+// Resistencias en ohm/km
+const resistencias = {
+cobre: {
+"14": 8.286,
+"12": 5.211,
+"10": 3.277,
+"8": 2.061,
+"6": 1.296
+},
+aluminio: {
+"14": 13.17,
+"12": 8.28,
+"10": 5.26,
+"8": 3.30,
+"6": 2.08
+}
+};
+
+const ampacidades = {
+"14": 15,
+"12": 20,
+"10": 30,
+"8": 40,
+"6": 55
+};
+
+function calcular(){
+
+let sistema = document.getElementById("sistema").value;
+let material = document.getElementById("material").value;
 let V = parseFloat(document.getElementById("voltaje").value);
+let limite = parseFloat(document.getElementById("limite").value);
 let P = parseFloat(document.getElementById("potencia").value);
-let D = parseFloat(document.getElementById("distancia").value);
+let L = parseFloat(document.getElementById("distancia").value);
 
-if(!P || !D) {
-    document.getElementById("resultado").innerHTML = "Ingrese todos los datos.";
-    return;
+if(!P || !L || P<=0 || L<=0){
+document.getElementById("resultado").innerHTML = "Ingrese valores válidos.";
+return;
 }
 
-let I = P / V;
-let Isegura = I * 1.25;
+// Corriente
+let I = (sistema=="mono") ? (P / V) : (P / (Math.sqrt(3)*V));
+let I125 = I * 1.25;
 
-let calibre = "";
-let breaker = "";
+let calibres = ["14","12","10","8","6"];
+let calibreFinal = "";
+let porcentajeVD = 0;
 
-if(Isegura <= 15) {
-    calibre = "14 AWG";
-    breaker = "15 A";
-} else if(Isegura <= 20) {
-    calibre = "12 AWG";
-    breaker = "20 A";
-} else if(Isegura <= 30) {
-    calibre = "10 AWG";
-    breaker = "30 A";
-} else if(Isegura <= 40) {
-    calibre = "8 AWG";
-    breaker = "40 A";
-} else {
-    calibre = "6 AWG o mayor";
-    breaker = "Consultar";
+for(let c of calibres){
+
+let R = resistencias[material][c];
+let distanciaReal = (sistema=="mono") ? L*2 : L;
+
+let VD = (distanciaReal * I125 * R) / 1000;
+porcentajeVD = (VD / V) * 100;
+
+if(I125 <= ampacidades[c] && porcentajeVD <= limite){
+calibreFinal = c;
+break;
 }
+}
+
+if(calibreFinal==""){ calibreFinal="Mayor a 6 AWG"; }
+
+let breaker = ampacidades[calibreFinal] ? ampacidades[calibreFinal]+" A" : "Consultar ingeniería";
+
+let claseColor="green";
+if(porcentajeVD > limite) claseColor="red";
+else if(porcentajeVD > limite*0.8) claseColor="yellow";
 
 document.getElementById("resultado").innerHTML =
-"<b>Corriente:</b> " + I.toFixed(2) + " A<br>" +
-"<b>Corriente corregida 125%:</b> " + Isegura.toFixed(2) + " A<br>" +
-"<b>Calibre recomendado:</b> " + calibre + "<br>" +
-"<b>Breaker recomendado:</b> " + breaker;
-
+`<div class="result ${claseColor}">
+<b>Sistema:</b> ${sistema=="mono"?"Monofásico":"Trifásico"}<br>
+<b>Material:</b> ${material}<br>
+<b>Corriente:</b> ${I.toFixed(2)} A<br>
+<b>Corriente 125%:</b> ${I125.toFixed(2)} A<br>
+<b>Caída de tensión:</b> ${porcentajeVD.toFixed(2)} %<br>
+<b>Calibre recomendado:</b> ${calibreFinal} AWG<br>
+<b>Breaker recomendado:</b> ${breaker}
+</div>`;
 }
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
+navigator.serviceWorker.register('sw.js');
 }
+
 </script>
 
 </body>
