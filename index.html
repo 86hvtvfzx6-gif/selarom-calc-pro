@@ -74,6 +74,8 @@ text-align:left;
 <input type="number" id="voltaje" placeholder="Voltaje (127 / 220 / 440)">
 <input type="number" id="distancia" placeholder="Distancia (m)">
 <input type="number" id="fp" placeholder="Factor de potencia (si aplica)">
+<input type="number" id="precioMetro" placeholder="Precio por metro de cable ($)">
+<input type="number" id="manoObra" placeholder="Costo mano de obra ($)">
 
 <button onclick="calcular()">CALCULAR</button>
 <button onclick="generarPDF()">GENERAR REPORTE PDF</button>
@@ -83,6 +85,8 @@ text-align:left;
 </div>
 
 <script>
+
+let datosGlobal={};
 
 function seleccionarCalibre(I){
 let Iseg = I*1.25;
@@ -101,6 +105,8 @@ let P=parseFloat(document.getElementById("potencia").value)||0;
 let V=parseFloat(document.getElementById("voltaje").value)||127;
 let L=parseFloat(document.getElementById("distancia").value)||0;
 let fp=parseFloat(document.getElementById("fp").value)||1;
+let precioMetro=parseFloat(document.getElementById("precioMetro").value)||0;
+let manoObra=parseFloat(document.getElementById("manoObra").value)||0;
 let tipo=document.getElementById("tipoSistema").value;
 
 let I=0;
@@ -116,11 +122,36 @@ let datos=seleccionarCalibre(I);
 let vd=(2*L*I*datos[2])/V;
 let porcentaje=(vd/V)*100;
 
+// Material
+let metrosCable=L*2; // ida y vuelta
+let costoCable=metrosCable*precioMetro;
+
+// Breaker estimado precio base
+let precioBreaker=800;
+let totalMaterial=costoCable+precioBreaker;
+let totalProyecto=totalMaterial+manoObra;
+
+datosGlobal={
+I,datos,porcentaje,
+metrosCable,costoCable,precioBreaker,
+totalMaterial,manoObra,totalProyecto
+};
+
 document.getElementById("resultado").innerHTML=
+"<h3>RESULTADOS TÉCNICOS</h3>"+
 "<b>Corriente:</b> "+I.toFixed(2)+" A<br>"+
 "<b>Calibre:</b> "+datos[0]+"<br>"+
 "<b>Breaker:</b> "+datos[1]+"<br>"+
-"<b>Caída de tensión:</b> "+porcentaje.toFixed(2)+" %";
+"<b>Caída de tensión:</b> "+porcentaje.toFixed(2)+" %<br><br>"+
+
+"<h3>LISTA DE MATERIAL</h3>"+
+"• Cable "+datos[0]+" - "+metrosCable+" m<br>"+
+"• Breaker "+datos[1]+"<br><br>"+
+
+"<h3>PRESUPUESTO</h3>"+
+"Material: $"+totalMaterial.toFixed(2)+"<br>"+
+"Mano de obra: $"+manoObra.toFixed(2)+"<br>"+
+"<b>Total proyecto: $"+totalProyecto.toFixed(2)+"</b>";
 }
 
 function generarPDF(){
@@ -136,11 +167,23 @@ doc.text("Soluciones Eléctricas",20,30);
 doc.setFontSize(11);
 doc.text("Contacto: 951 849 3149",20,38);
 
-doc.setFontSize(12);
 doc.line(20,42,190,42);
 
-let contenido=document.getElementById("resultado").innerText;
-doc.text(contenido,20,55);
+doc.setFontSize(12);
+doc.text("RESULTADOS TÉCNICOS",20,55);
+doc.text("Corriente: "+datosGlobal.I.toFixed(2)+" A",20,63);
+doc.text("Calibre: "+datosGlobal.datos[0],20,70);
+doc.text("Breaker: "+datosGlobal.datos[1],20,77);
+doc.text("Caída de tensión: "+datosGlobal.porcentaje.toFixed(2)+" %",20,84);
+
+doc.text("LISTA DE MATERIAL",20,100);
+doc.text("Cable "+datosGlobal.datos[0]+" - "+datosGlobal.metrosCable+" m",20,108);
+doc.text("Breaker "+datosGlobal.datos[1],20,115);
+
+doc.text("PRESUPUESTO",20,130);
+doc.text("Material: $"+datosGlobal.totalMaterial.toFixed(2),20,138);
+doc.text("Mano de obra: $"+datosGlobal.manoObra.toFixed(2),20,145);
+doc.text("Total proyecto: $"+datosGlobal.totalProyecto.toFixed(2),20,152);
 
 doc.save("Reporte_SELAROM.pdf");
 }
