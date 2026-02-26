@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SELAROM CALC PRO TOTAL</title>
+<title>SELAROM CALC PRO</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -31,7 +31,7 @@ margin-bottom:10px;
 .container{
 padding:20px;
 }
-input,select{
+input{
 width:90%;
 padding:10px;
 margin:8px 0;
@@ -53,6 +53,7 @@ background:#1e1e1e;
 padding:15px;
 border-radius:10px;
 text-align:left;
+white-space:pre-line;
 }
 </style>
 </head>
@@ -64,20 +65,16 @@ text-align:left;
 
 <div class="container">
 
-<select id="tipoSistema">
-<option value="residencial">Residencial</option>
-<option value="mono">Comercial Monofásico</option>
-<option value="trifasico">Comercial Trifásico</option>
-</select>
+<h3>Datos del Proyecto</h3>
 
-<input type="number" id="potencia" placeholder="Potencia total (W)">
-<input type="number" id="voltaje" placeholder="Voltaje (127 / 220 / 440)">
-<input type="number" id="distancia" placeholder="Distancia (m)">
-<input type="number" id="fp" placeholder="Factor de potencia (si aplica)">
-<input type="number" id="precioMetro" placeholder="Precio por metro de cable ($)">
-<input type="number" id="manoObra" placeholder="Costo mano de obra ($)">
+<input type="number" id="numContactos" placeholder="Número de contactos">
+<input type="number" id="numApagadoresS" placeholder="Apagadores sencillos">
+<input type="number" id="numApagadoresE" placeholder="Apagadores 3 vías">
+<input type="number" id="numApagadores4" placeholder="Apagadores 4 vías">
+<input type="number" id="numLuminarias" placeholder="Número de luminarias">
+<input type="number" id="distancia" placeholder="Metros aproximados de instalación">
 
-<button onclick="calcular()">CALCULAR</button>
+<button onclick="calcular()">GENERAR LISTA DE MATERIAL</button>
 <button onclick="generarPDF()">GENERAR REPORTE PDF</button>
 
 <div class="result" id="resultado"></div>
@@ -86,75 +83,103 @@ text-align:left;
 
 <script>
 
-let datosGlobal={};
-
-function seleccionarCalibre(I){
-let Iseg = I*1.25;
-if(Iseg<=15) return ["14 AWG","15 A",2.525];
-if(Iseg<=20) return ["12 AWG","20 A",1.588];
-if(Iseg<=30) return ["10 AWG","30 A",0.999];
-if(Iseg<=40) return ["8 AWG","40 A",0.628];
-if(Iseg<=55) return ["6 AWG","50 A",0.395];
-if(Iseg<=75) return ["4 AWG","70 A",0.248];
-if(Iseg<=100) return ["3 AWG","90 A",0.197];
-return ["Consultar ingeniería","Especial",0];
-}
+let listaTexto = "";
 
 function calcular(){
-let P=parseFloat(document.getElementById("potencia").value)||0;
-let V=parseFloat(document.getElementById("voltaje").value)||127;
-let L=parseFloat(document.getElementById("distancia").value)||0;
-let fp=parseFloat(document.getElementById("fp").value)||1;
-let precioMetro=parseFloat(document.getElementById("precioMetro").value)||0;
-let manoObra=parseFloat(document.getElementById("manoObra").value)||0;
-let tipo=document.getElementById("tipoSistema").value;
 
-let I=0;
+let contactos=parseInt(document.getElementById("numContactos").value)||0;
+let apagS=parseInt(document.getElementById("numApagadoresS").value)||0;
+let apagE=parseInt(document.getElementById("numApagadoresE").value)||0;
+let apag4=parseInt(document.getElementById("numApagadores4").value)||0;
+let luminarias=parseInt(document.getElementById("numLuminarias").value)||0;
+let metros=parseInt(document.getElementById("distancia").value)||0;
 
-if(tipo==="trifasico"){
-I=P/(1.732*V*fp);
-}else{
-I=P/V;
-}
+let chalupas=contactos+apagS+apagE+apag4;
+let cajasRegistro=Math.ceil(metros/10);
 
-let datos=seleccionarCalibre(I);
+listaTexto = `
+📋 LISTA COMPLETA DE MATERIAL RESIDENCIAL
 
-let vd=(2*L*I*datos[2])/V;
-let porcentaje=(vd/V)*100;
+🔌 Acometida y alimentación
+Mufa
+Tubo galvanizado para acometida
+Base para medidor
+Interruptor principal
+Centro de carga
+Barras de tierra
+Barra de neutro
 
-// Material
-let metrosCable=L*2; // ida y vuelta
-let costoCable=metrosCable*precioMetro;
+🔲 Breakers termomagnéticos
+Breaker 15 A
+Breaker 20 A
+Breaker 25 A
+Breaker 30 A
+Breaker 40 A
+Breaker 50 A
+Breaker 60 A
+Breaker 80 A
+Breaker 100 A
 
-// Breaker estimado precio base
-let precioBreaker=800;
-let totalMaterial=costoCable+precioBreaker;
-let totalProyecto=totalMaterial+manoObra;
+🌎 Sistema de puesta a tierra
+Varilla copperweld 5/8” x 2.40 m
+Conector para varilla
+Cable de tierra
 
-datosGlobal={
-I,datos,porcentaje,
-metrosCable,costoCable,precioBreaker,
-totalMaterial,manoObra,totalProyecto
-};
+⚡ Conductores eléctricos (THW-LS o THHN)
+Cable #14 AWG
+Cable #12 AWG
+Cable #10 AWG
+Cable #8 AWG
+Cable #6 AWG
+Negro o rojo (fase)
+Blanco (neutro)
+Verde (tierra)
 
-document.getElementById("resultado").innerHTML=
-"<h3>RESULTADOS TÉCNICOS</h3>"+
-"<b>Corriente:</b> "+I.toFixed(2)+" A<br>"+
-"<b>Calibre:</b> "+datos[0]+"<br>"+
-"<b>Breaker:</b> "+datos[1]+"<br>"+
-"<b>Caída de tensión:</b> "+porcentaje.toFixed(2)+" %<br><br>"+
+🧱 Canalización
+Tubo conduit PVC o EMT
+Coples
+Conectores
+Curvas
+Abrazaderas
+Cajas de registro 4x4 (${cajasRegistro})
+Chalupas (${chalupas})
+Tapas
+Adaptadores 4x4 a chalupa
 
-"<h3>LISTA DE MATERIAL</h3>"+
-"• Cable "+datos[0]+" - "+metrosCable+" m<br>"+
-"• Breaker "+datos[1]+"<br><br>"+
+💡 Alumbrado
+Luminarias (${luminarias})
+Apagadores sencillos (${apagS})
+Apagadores 3 vías (${apagE})
+Apagadores 4 vías (${apag4})
+Dimmer (opcional)
 
-"<h3>PRESUPUESTO</h3>"+
-"Material: $"+totalMaterial.toFixed(2)+"<br>"+
-"Mano de obra: $"+manoObra.toFixed(2)+"<br>"+
-"<b>Total proyecto: $"+totalProyecto.toFixed(2)+"</b>";
+🔌 Contactos
+Contactos duplex 15A (${contactos})
+Contactos duplex 20A
+Contactos con tierra
+Contactos GFCI
+Contactos 220V
+
+🪟 Placas (tapas)
+Placas 1 ventana
+Placas 2 ventanas
+Placas 3 ventanas
+Placas 4 ventanas
+Placas ciegas
+Placas especiales para GFCI
+Placas para TV / datos
+
+🔐 Protección adicional
+Interruptor diferencial
+Supresor de picos
+`;
+
+document.getElementById("resultado").innerText = listaTexto;
+
 }
 
 function generarPDF(){
+
 const { jsPDF } = window.jspdf;
 let doc=new jsPDF();
 
@@ -169,23 +194,21 @@ doc.text("Contacto: 951 849 3149",20,38);
 
 doc.line(20,42,190,42);
 
-doc.setFontSize(12);
-doc.text("RESULTADOS TÉCNICOS",20,55);
-doc.text("Corriente: "+datosGlobal.I.toFixed(2)+" A",20,63);
-doc.text("Calibre: "+datosGlobal.datos[0],20,70);
-doc.text("Breaker: "+datosGlobal.datos[1],20,77);
-doc.text("Caída de tensión: "+datosGlobal.porcentaje.toFixed(2)+" %",20,84);
+doc.setFontSize(10);
 
-doc.text("LISTA DE MATERIAL",20,100);
-doc.text("Cable "+datosGlobal.datos[0]+" - "+datosGlobal.metrosCable+" m",20,108);
-doc.text("Breaker "+datosGlobal.datos[1],20,115);
+let lineas = doc.splitTextToSize(listaTexto,170);
+let y=55;
 
-doc.text("PRESUPUESTO",20,130);
-doc.text("Material: $"+datosGlobal.totalMaterial.toFixed(2),20,138);
-doc.text("Mano de obra: $"+datosGlobal.manoObra.toFixed(2),20,145);
-doc.text("Total proyecto: $"+datosGlobal.totalProyecto.toFixed(2),20,152);
+lineas.forEach(linea=>{
+if(y>280){
+doc.addPage();
+y=20;
+}
+doc.text(linea,20,y);
+y+=6;
+});
 
-doc.save("Reporte_SELAROM.pdf");
+doc.save("Lista_Completa_Material_SELAROM.pdf");
 }
 
 </script>
