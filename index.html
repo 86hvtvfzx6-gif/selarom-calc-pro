@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SELAROM CALC PRO</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00ff88">
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
+    text-align: center;
+}
+header {
+    background: #1a1a1a;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #00ff88;
+}
+.container {
+    padding: 20px;
+}
+input, select {
+    width: 90%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 5px;
+    border: none;
+    font-size: 16px;
+}
+button {
+    width: 95%;
+    padding: 12px;
+    margin-top: 15px;
+    background: #00ff88;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.result {
+    margin-top: 20px;
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>SELAROM CALC PRO</header>
+
+<div class="container">
+
+<h3>Cálculo de Calibre</h3>
+
+<select id="voltaje">
+<option value="127">127 V</option>
+<option value="220">220 V</option>
+</select>
+
+<input type="number" id="potencia" placeholder="Potencia total (Watts)">
+<input type="number" id="distancia" placeholder="Distancia (metros)">
+
+<button onclick="calcular()">CALCULAR</button>
+
+<div class="result" id="resultado"></div>
+
+</div>
+
+<script>
+function calcular() {
+
+let V = parseFloat(document.getElementById("voltaje").value);
+let P = parseFloat(document.getElementById("potencia").value);
+let D = parseFloat(document.getElementById("distancia").value);
+
+if(!P || !D) {
+    document.getElementById("resultado").innerHTML = "Ingrese todos los datos.";
+    return;
+}
+
+let I = P / V;
+let Isegura = I * 1.25;
+
+let calibre = "";
+let breaker = "";
+
+if(Isegura <= 15) {
+    calibre = "14 AWG";
+    breaker = "15 A";
+} else if(Isegura <= 20) {
+    calibre = "12 AWG";
+    breaker = "20 A";
+} else if(Isegura <= 30) {
+    calibre = "10 AWG";
+    breaker = "30 A";
+} else if(Isegura <= 40) {
+    calibre = "8 AWG";
+    breaker = "40 A";
+} else {
+    calibre = "6 AWG o mayor";
+    breaker = "Consultar";
+}
+
+document.getElementById("resultado").innerHTML =
+"<b>Corriente:</b> " + I.toFixed(2) + " A<br>" +
+"<b>Corriente corregida 125%:</b> " + Isegura.toFixed(2) + " A<br>" +
+"<b>Calibre recomendado:</b> " + calibre + "<br>" +
+"<b>Breaker recomendado:</b> " + breaker;
+
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+</body>
+</html>
